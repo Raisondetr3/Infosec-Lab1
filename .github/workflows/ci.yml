@@ -1,18 +1,17 @@
-name: Security CI/CD Pipeline
+name: CI Security Scans
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "**" ]
 
 jobs:
-  build:
-    name: Build Application
+  security:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -26,149 +25,28 @@ jobs:
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
 
-      - name: Compile application
+      - name: Build application
         run: mvn clean compile
 
-  sast-analysis:
-    name: SAST - SpotBugs Analysis
-    runs-on: ubuntu-latest
-    needs: build
+      - name: Run SpotBugs (SAST)
+        run: mvn com.github.spotbugs:spotbugs-maven-plugin:4.7.3.6:spotbugs
+        continue-on-error: true
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Run SpotBugs Static Analysis
-        run: |
-          mvn clean compile
-          mvn com.github.spotbugs:spotbugs-maven-plugin:4.7.3.6:spotbugs
+      - name: Run OWASP Dependency Check (SCA)
+        run: mvn org.owasp:dependency-check-maven:8.4.2:check -Dnvd.data.directory=~/.m2/nvd-cache -DfailBuildOnCVSS=10
         continue-on-error: true
 
       - name: Upload SpotBugs Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: spotbugs-sast-report
+          name: spotbugs-report
           path: target/spotbugsXml.xml
-          retention-days: 30
-
-  sca-analysis:
-    name: SCA - OWASP Dependency Check
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Run OWASP Dependency Check
-        run: |
-          mvn clean compile
-          mvn org.owasp:dependency-check-maven:8.4.2:check
-        continue-on-error: true
 
       - name: Upload OWASP Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: owasp-sca-report
+          name: owasp-report
           path: target/dependency-check-report.html
-          retention-days: 30
-
-  security-report:
-    name: Generate Security Report
-    runs-on: ubuntu-latest
-    needs: [sast-analysis, sca-analysis]
-    if: always()
-
-    steps:
-      - name: Download Security Reports
-        uses: actions/download-artifact@v4
-        with:
-          pattern: '*-report'
-          merge-multiple: true
-
-      - name: Generate Security Analysis Report
-        run: |
-          echo "# Security Analysis Report" > SECURITY_REPORT.md
-          echo "Generated: $(date)" >> SECURITY_REPORT.md
-          echo "Commit: ${{ github.sha }}" >> SECURITY_REPORT.md
-          echo "" >> SECURITY_REPORT.md
-          
-          echo "## Task Requirements Compliance" >> SECURITY_REPORT.md
-          echo "- SAST Analysis: SpotBugs configured and executed" >> SECURITY_REPORT.md
-          echo "- SCA Analysis: OWASP Dependency Check configured and executed" >> SECURITY_REPORT.md
-          echo "- CI/CD Pipeline: Automated security checks on push and PR" >> SECURITY_REPORT.md
-          echo "- Report Generation: Security scan reports generated automatically" >> SECURITY_REPORT.md
-          echo "" >> SECURITY_REPORT.md
-          
-          echo "## SAST Results" >> SECURITY_REPORT.md
-          if [ -f spotbugsXml.xml ]; then
-            BUGS_COUNT=$(grep -c "BugInstance" spotbugsXml.xml 2>/dev/null || echo "0")
-            echo "- SpotBugs Analysis: Found $BUGS_COUNT potential security issues" >> SECURITY_REPORT.md
-          else
-            echo "- SpotBugs report not generated" >> SECURITY_REPORT.md
-          fi
-          echo "" >> SECURITY_REPORT.md
-          
-          echo "## SCA Results" >> SECURITY_REPORT.md
-          if [ -f dependency-check-report.html ]; then
-            echo "- OWASP Dependency Check: Analysis completed" >> SECURITY_REPORT.md
-          else
-            echo "- OWASP Dependency Check report not generated" >> SECURITY_REPORT.md
-          fi
-          echo "" >> SECURITY_REPORT.md
-          
-          echo "## Available Reports" >> SECURITY_REPORT.md
-          echo "Download the following artifacts from this GitHub Actions run:" >> SECURITY_REPORT.md
-          
-          if [ -f spotbugsXml.xml ]; then
-            echo "- SpotBugs SAST Report (XML format)" >> SECURITY_REPORT.md
-          fi
-          
-          if [ -f dependency-check-report.html ]; then
-            echo "- OWASP Dependency Check Report (HTML format)" >> SECURITY_REPORT.md
-          fi
-
-      - name: Upload Final Security Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: final-security-report
-          path: SECURITY_REPORT.md
-          retention-days: 90
-
-      - name: Display Security Report Summary
-        run: |
-          echo "=========================================="
-          echo "SECURITY ANALYSIS COMPLETED"
-          echo "=========================================="
-          cat SECURITY_REPORT.md
-          echo "=========================================="
