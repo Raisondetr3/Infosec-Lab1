@@ -31,4 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
 .env
+.DS_Store
+mvnw
+mvnw.cmd
+.secrets
+
