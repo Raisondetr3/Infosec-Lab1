@@ -30,9 +30,7 @@ public class UserService {
 
     @Transactional
     public AuthResponseDto login(LoginRequestDto loginRequestDto) {
-        String safeUsername = HtmlUtils.htmlEscape(loginRequestDto.getUsername().trim());
-
-        Optional<User> existingUser = userRepository.findByUsername(safeUsername);
+        Optional<User> existingUser = userRepository.findByUsername(loginRequestDto.getUsername());
 
         if (existingUser.isPresent()) {
             User user = existingUser.get();
@@ -54,7 +52,7 @@ public class UserService {
                         "Password must contain at least 8 characters, including uppercase, lowercase, number and special character");
             }
 
-            LoginRequestDto safeDto = new LoginRequestDto(safeUsername, loginRequestDto.getPassword());
+            LoginRequestDto safeDto = new LoginRequestDto(loginRequestDto.getUsername(), loginRequestDto.getPassword());
 
             User user = entityMapper.toUserEntity(safeDto, passwordEncoder);
             User savedUser = userRepository.save(user);
@@ -65,13 +63,6 @@ public class UserService {
 
             return new AuthResponseDto(token, expirationTime, registeredUser);
         }
-    }
-
-    @Transactional(readOnly = true)
-    public UserDto findByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .map(entityMapper::toUserDto)
-                .orElseThrow(() -> new UserNotFoundException("User by username " + username + " not found"));
     }
 
     private boolean isPasswordStrong(String password) {
