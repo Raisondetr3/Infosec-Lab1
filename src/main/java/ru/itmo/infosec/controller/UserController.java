@@ -2,6 +2,7 @@ package ru.itmo.infosec.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.itmo.infosec.dto.*;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
+@Slf4j
 @RequiredArgsConstructor
 public class UserController {
 
@@ -20,6 +22,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
+        log.info("Login request received for user: {}", loginRequestDto.getUsername());
         return ResponseEntity.ok(userService.login(loginRequestDto));
     }
 

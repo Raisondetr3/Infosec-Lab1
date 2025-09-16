@@ -94,7 +94,7 @@ curl -X GET "http://localhost:8080/api/data" \
 ```
 
 ### 3. DELETE `/api/auth/logout` - Выход
-**URL:** `http://localhost:8080/api/auth/logout`
+**URL:** `http://localhost:8080/auth/logout`
 
 **Метод:** DELETE
 
@@ -114,7 +114,7 @@ Content-Type: application/json
 
 **Пример вызова (curl):**
 ```bash
-curl -X DELETE "http://localhost:8080/api/auth/logout" \
+curl -X DELETE "http://localhost:8080/auth/logout" \
   -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json"
 ```

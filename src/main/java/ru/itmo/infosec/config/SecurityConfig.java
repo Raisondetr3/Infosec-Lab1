@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ru.itmo.infosec.repo.UserRepository;
+import ru.itmo.infosec.security.CustomAuthenticationEntryPoint;
 import ru.itmo.infosec.security.JwtAuthenticationFilter;
 import ru.itmo.infosec.service.JwtBlacklistService;
 import ru.itmo.infosec.service.JwtService;
@@ -26,6 +27,7 @@ import ru.itmo.infosec.service.JwtService;
 public class SecurityConfig {
 
     private final JwtService jwtService;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final UserRepository userRepository;
     private final JwtBlacklistService jwtBlacklistService;
 
@@ -46,8 +48,11 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/auth/login").permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
