@@ -9,43 +9,27 @@
 
 ## API Endpoints
 
-### Аутентификация
-
-#### POST `/api/auth/register`
-Регистрация нового пользователя.
-
-**Request Body:**
-```json
-{
-  "username": "newuser",
-  "password": "SecurePass123!"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "expirationTime": 1736766123456,
-  "user": {
-    "id": 1,
-    "username": "newuser"
-  }
-}
-```
-
-#### POST `/api/auth/login`
+### POST `/auth/login`
 Аутентификация пользователя.
+
+**URL:** `http://localhost:8080/auth/login`
+
+**Метод:** POST
+
+**Headers:**
+```
+Content-Type: application/json
+```
 
 **Request Body:**
 ```json
 {
   "username": "testuser",
-  "password": "TestPass123!"
+  "password": "SecurePass123!"
 }
 ```
 
-**Response (200 OK):**
+**Успешный ответ (200 OK):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
@@ -57,59 +41,82 @@
 }
 ```
 
-#### PUT `/api/auth/profile`
-Обновление профиля пользователя (требует аутентификации).
+**Пример вызова (curl):**
+```bash
+curl -X POST "http://localhost:8080/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "password": "SecurePass123!"
+  }'
+```
+
+### 2. GET `/api/posts` - Получение всех постов
+**URL:** `http://localhost:8080/api/data`
+
+**Метод:** GET
 
 **Headers:**
 ```
 Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
 ```
 
-**Request Body:**
-```json
-{
-  "username": "newusername",
-  "newPassword": "NewSecurePass123!",
-  "currentPassword": "TestPass123!"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "user": {
-    "id": 1,
-    "username": "newusername"
-  },
-  "message": "Profile updated successfully"
-}
-```
-
-### Управление постами
-
-#### GET `/api/posts`
-Получение всех постов (требует аутентификации).
-
-**Headers:**
-```
-Authorization: Bearer <JWT_TOKEN>
-```
-
-**Response (200 OK):**
+**Успешный ответ (200 OK):**
 ```json
 {
   "posts": [
     {
       "id": 1,
       "title": "Welcome to Secure API",
-      "content": "This is a welcome post...",
+      "content": "This is a welcome post to demonstrate our secure API functionality...",
       "authorUsername": "testuser",
       "authorId": 1
+    },
+    {
+      "id": 2,
+      "title": "Spring Boot Security Guide",
+      "content": "Key security practices: JWT authentication, bcrypt password hashing...",
+      "authorUsername": "admin",
+      "authorId": 2
     }
   ],
   "count": 15,
   "message": "Posts retrieved successfully"
 }
+```
+
+**Пример вызова (curl):**
+```bash
+curl -X GET "http://localhost:8080/api/data" \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json"
+```
+
+### 3. DELETE `/api/auth/logout` - Выход
+**URL:** `http://localhost:8080/api/auth/logout`
+
+**Метод:** DELETE
+
+**Headers:**
+```
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+```
+
+**Успешный ответ (200 OK):**
+```json
+{
+  "message": "Successfully logged out",
+  "timestamp": "1736766123456"
+}
+```
+
+**Пример вызова (curl):**
+```bash
+curl -X DELETE "http://localhost:8080/api/auth/logout" \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json"
 ```
 
 ## Реализованные меры защиты
@@ -132,8 +139,6 @@ Authorization: Bearer <JWT_TOKEN>
 **Методы защиты:**
 - **Хеширование паролей**: BCrypt
 - **Безопасные JWT токены**: HMAC SHA-256 подпись
-- **Проверка силы паролей**: Минимум 8 символов + сложность
-- **Защита от Timing Attacks**: Одинаковое время выполнения
 
 ### 4. Контроль доступа
 
@@ -141,8 +146,9 @@ Authorization: Bearer <JWT_TOKEN>
 - **JWT токены**: Обязательная аутентификация для защищенных endpoint'ов
 - - **Method-level security**: через цепочку фильтров
 
-## Отчёт SAST
+## Отчёты SAST/SCA
 
-##
+![](screenshots/SAST.png)
+![](screenshots/Sync.png)
 
 

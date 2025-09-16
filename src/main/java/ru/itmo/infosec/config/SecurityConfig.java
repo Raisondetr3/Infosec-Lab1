@@ -18,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ru.itmo.infosec.repo.UserRepository;
 import ru.itmo.infosec.security.JwtAuthenticationFilter;
+import ru.itmo.infosec.service.JwtBlacklistService;
 import ru.itmo.infosec.service.JwtService;
 
 @Configuration
@@ -26,6 +27,7 @@ public class SecurityConfig {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final JwtBlacklistService jwtBlacklistService;
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -35,7 +37,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserDetailsService userDetailsService) {
-        return new JwtAuthenticationFilter(jwtService, userDetailsService);
+        return new JwtAuthenticationFilter(jwtService, jwtBlacklistService, userDetailsService);
     }
 
     @Bean
@@ -44,7 +46,6 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )

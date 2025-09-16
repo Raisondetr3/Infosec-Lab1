@@ -14,7 +14,7 @@ import ru.itmo.infosec.service.PostService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/posts")
+@RequestMapping("/api/data")
 @RequiredArgsConstructor
 public class PostController {
 
