@@ -33,20 +33,25 @@ jobs:
         run: mvn com.github.spotbugs:spotbugs-maven-plugin:4.7.3.6:spotbugs
         continue-on-error: true
 
-      - name: Install Snyk CLI
-        run: |
-          npm install -g snyk
-          snyk --version
-
-      - name: Run Snyk (SCA)
-        run: |
-          snyk auth ${{ secrets.SNYK_TOKEN }}
-          snyk test --file=pom.xml --severity-threshold=medium
+      - name: Run OWASP Dependency Check (SCA)
+        run: mvn org.owasp:dependency-check-maven:8.4.0:check
         continue-on-error: true
 
-      - name: Upload SpotBugs Report
+      - name: Run Trivy Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'json'
+          output: 'trivy-report.json'
+        continue-on-error: true
+
+      - name: Upload Security Reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: spotbugs-report
-          path: target/spotbugsXml.xml
+          name: security-reports
+          path: |
+            target/spotbugsXml.xml
+            target/site/spotbugs.html
+            target/dependency-check/*
+            trivy-report.json
